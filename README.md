@@ -28,3 +28,22 @@ agents need per-user materialisation. `brew info` prints the exact commands, or 
 ## License
 
 MIT © 2026 Kyle Brodeur
+
+## Releasing
+
+1. Tag and release the tool repo: `git tag -a vX.Y.Z && git push origin vX.Y.Z && gh release create vX.Y.Z`
+2. Get the tarball checksum:
+   `curl -fsSL https://github.com/kylebrodeur/<repo>/archive/refs/tags/vX.Y.Z.tar.gz | sha256sum`
+3. Update `url` and `sha256` in the formula, commit, push.
+4. **Refresh your local tap clone before testing** — this bit me:
+
+```bash
+brew tap kylebrodeur/tap          # does NOT fetch if the clone already exists
+git -C "$(brew --repository)/Library/Taps/kylebrodeur/homebrew-tap" pull   # this does
+brew reinstall kylebrodeur/tap/<formula>
+brew test kylebrodeur/tap/<formula>
+```
+
+`brew tap` on an existing clone silently reuses it, so a `reinstall` right after
+pushing a formula change will happily build the **old** version and look like it
+worked. Verify with `brew list --versions <formula>`.
