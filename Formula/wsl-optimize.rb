@@ -1,8 +1,8 @@
 class WslOptimize < Formula
   desc "Memory and disk hygiene for a WSL2 box running many AI coding agents"
   homepage "https://github.com/kylebrodeur/wsl-optimize"
-  url "https://github.com/kylebrodeur/wsl-optimize/archive/refs/tags/v1.0.0.tar.gz"
-  sha256 "31af1d8a5de33cac68d5a6cc7fb60fa374096d2c0b244b29722b00db2e9da7bf"
+  url "https://github.com/kylebrodeur/wsl-optimize/archive/refs/tags/v1.0.1.tar.gz"
+  sha256 "d6624fcb8bcc11fedb3aea110522a9ec0a87426a81444e56f1bb10039900366c"
   license "MIT"
   head "https://github.com/kylebrodeur/wsl-optimize.git", branch: "main"
 
@@ -49,10 +49,14 @@ class WslOptimize < Formula
   end
 
   test do
-    assert_match "wslreport", shell_output("#{bin}/wslreport --help 2>&1", 1) rescue nil
-    # The doctor is read-only and exits non-zero when the host is unconfigured,
-    # so assert it RUNS and produces its own summary line rather than asserting
-    # success — a fresh CI box legitimately fails several host checks.
+    # --help must be fast and hermetic; it used to fall through to the full
+    # report (which shells out to PowerShell) and hang the test.
+    assert_match "wslreport", shell_output("#{bin}/wslreport --help")
+    # shell_output raises unless the exit status matches, so this call IS the
+    # assertion that an unknown option exits 2.
+    assert_match "unknown option", shell_output("#{bin}/wslreport --bogus 2>&1", 2)
+    # The doctor is read-only and legitimately exits non-zero on an unconfigured
+    # host (no swap tuning, no earlyoom), so assert it RUNS and emits its summary.
     assert_match(/wsl-optimize: \d+ passed/, shell_output("#{bin}/wsl-optimize-doctor 2>&1", 1))
   end
 end
