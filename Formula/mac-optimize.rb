@@ -43,6 +43,15 @@ class MacOptimize < Formula
   end
 
   test do
-    assert_match(/mac-optimize: \d+ passed/, shell_output("#{bin}/mac-optimize-doctor 2>&1", 1))
+    # The doctor's exit status reflects the HOST's posture, not the install: it
+    # exits 0 on a fully-configured machine and non-zero when host checks fail.
+    # Asserting a specific status would make `brew test` pass or fail depending
+    # on whose machine it runs on. `|| true` normalises it, so the assertion is
+    # about the tool RUNNING and emitting its own summary line.
+    assert_match(/mac-optimize: \d+ passed/, shell_output("#{bin}/mac-optimize-doctor 2>&1 || true"))
+    # worktree-audit must resolve the shared library from the Cellar, not only
+    # from a repo checkout — an unresolved library made it silently classify
+    # nothing on the WSL side.
+    assert_match "worktree-audit", shell_output("#{bin}/worktree-audit --help 2>&1 || true")
   end
 end

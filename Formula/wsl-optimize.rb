@@ -55,8 +55,15 @@ class WslOptimize < Formula
     # shell_output raises unless the exit status matches, so this call IS the
     # assertion that an unknown option exits 2.
     assert_match "unknown option", shell_output("#{bin}/wslreport --bogus 2>&1", 2)
-    # The doctor is read-only and legitimately exits non-zero on an unconfigured
-    # host (no swap tuning, no earlyoom), so assert it RUNS and emits its summary.
-    assert_match(/wsl-optimize: \d+ passed/, shell_output("#{bin}/wsl-optimize-doctor 2>&1", 1))
+    # The doctor's exit status reflects the HOST's posture, not the install:
+    # it exits 0 on a fully-configured machine and non-zero when host checks
+    # fail. Asserting a specific status would make `brew test` pass or fail
+    # depending on whose machine it runs on. `|| true` normalises it so the
+    # assertion is about the tool RUNNING and emitting its summary.
+    assert_match(/wsl-optimize: \d+ passed/, shell_output("#{bin}/wsl-optimize-doctor 2>&1 || true"))
+    # worktree-audit must resolve the shared library from the Cellar, not only
+    # from a repo checkout — an unresolved library made it silently classify
+    # nothing during development.
+    assert_match "worktree-audit", shell_output("#{bin}/worktree-audit --help 2>&1 || true")
   end
 end
